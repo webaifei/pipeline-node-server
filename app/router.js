@@ -8,6 +8,7 @@ module.exports = app => {
 
   // 模板相关接口
   app.resources('/templates', controller.templates);
+  /** 获取模板id */
   router.get('/templateid', controller.templates.getTemplateId);
 
   // 模板生成页面相关接口

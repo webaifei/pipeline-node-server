@@ -12,9 +12,15 @@ const path = require('path');
 const Controller = require('egg').Controller;
 
 // 将组件库源码放入页面工作管道
+// templateId 模板id
+// pageId 当前预览页目录名
 const makePagePipelineTemplate = async (context, templateId, pageId) => {
-  const { ctx, config, service } = context;
-
+  const {
+    ctx,
+    config,
+    service,
+  } = context;
+  // 通过templateId获取模板的数据
   const template = await service.db.queryTemplate({
     conditions: {
       id: templateId,
@@ -24,20 +30,27 @@ const makePagePipelineTemplate = async (context, templateId, pageId) => {
   //   files: '/pipeline-resource/template/1/pipeline-template.zip',
   // };
   console.log('test', template, template.files, template.files);
+  // 模板压缩文件路径
   const templateZipFilePath = path.join(config.resourcesPath.templateDir, template.files);
+  // 预览文件夹路径
   const pagepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId);
   const templatepipelineDir = pagepipelineDir;
-
+  // 解压
   await ctx.helper.execShell([
     `mkdir -p ${templatepipelineDir}`,
-    `unzip -o ${templateZipFilePath} -d ${templatepipelineDir}` ]);
+    `unzip -o ${templateZipFilePath} -d ${templatepipelineDir}`,
+  ]);
 };
 
 // 在页面工作管道备份模板(页面)配置数据
 const copyTemplateConfig = async (context, pageId) => {
-  const { ctx, config } = context;
-
+  const {
+    ctx,
+    config,
+  } = context;
+  // 预览页路径
   const pagepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId);
+  // 配置目录
   const templatepipelineDir = path.join(pagepipelineDir, 'server/config');
   const baseConfigpipelinePath = path.join(templatepipelineDir, 'base-config.json');
   const originBaseConfigpipelinePath = path.join(templatepipelineDir, 'base-config-origin.json');
@@ -47,23 +60,39 @@ const copyTemplateConfig = async (context, pageId) => {
   // 复制模板配置文件, 做为页面重置的数据来源
   await ctx.helper.execShell([
     `cp -rf ${baseConfigpipelinePath} ${originBaseConfigpipelinePath}`,
-    `cp -rf ${templatepipelinePath} ${originTemplatepipelinePath}` ]);
+    `cp -rf ${templatepipelinePath} ${originTemplatepipelinePath}`,
+  ]);
 };
 
-// 基于模板构建页面工作管道
+/**
+ * 基于模板构建页面工作管道
+ * @param {object} context 请求上下文
+ * @param {string} templateId 模板id
+ * @param {string} pageId 当前编辑发布页id
+ */
+
 const makePagepipelineFromTemplate = async (context, templateId, pageId) => {
-  const { ctx } = context;
+  const {
+    ctx,
+  } = context;
 
   await makePagePipelineTemplate(context, templateId, pageId);
+  // 备份pageId页面的配置
   await copyTemplateConfig(context, pageId);
+  // 启动模板预览页面服务
   await ctx.helper.execShell([
     `cd ./app/public/pipelines/${pageId}/server`,
-    'node node.js preview' ]);
+    'node node.js preview',
+  ]);
 };
 
 // 基于页面构建页面工作管道
 const makePagepipelineFromPage = async (context, templateId, pageId) => {
-  const { ctx, config, service } = context;
+  const {
+    ctx,
+    config,
+    service,
+  } = context;
 
   const page = await service.page.getPageById(pageId);
 
@@ -76,12 +105,16 @@ const makePagepipelineFromPage = async (context, templateId, pageId) => {
   await copyTemplateConfig(context, pageId);
   await ctx.helper.execShell([
     `cd ./app/public/pipelines/${pageId}/server`,
-    'node node.js preview' ]);
+    'node node.js preview',
+  ]);
 };
 
 // 构建用于发布页面源码
 const makePageActivity = async (context, pageId) => {
-  const { ctx, config } = context;
+  const {
+    ctx,
+    config,
+  } = context;
   const pagepipelineServerDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server');
   const pageActivityDir = path.join(config.baseDir, 'app/public/activities', pageId);
 
@@ -90,7 +123,8 @@ const makePageActivity = async (context, pageId) => {
     `mkdir -p ${pageActivityDir}`,
     `cp -rf ${pagepipelineServerDir} ${pageActivityDir}`,
     `cd ./app/public/activities/${pageId}/server`,
-    'node node.js release' ]);
+    'node node.js release',
+  ]);
 
   // 基于 dist 创建纯净的发布目录
   await ctx.helper.execShell([
@@ -99,26 +133,42 @@ const makePageActivity = async (context, pageId) => {
     `cd ./app/public/activities/${pageId}/${pageId}`,
     'rm -f index-origin.html',
     'rm -f vue-ssr-server-bundle.json',
-    'rm -f vue-ssr-client-manifest.json' ]);
+    'rm -f vue-ssr-client-manifest.json',
+  ]);
 };
 
 class EditController extends Controller {
+  /**
+   * 根据templateId 生成预览页
+   * 1. 创建预览页所在目录
+   * 2. 解压模板到预览页目录
+   * 3. 启动预览页服务
+   */
   async prepareFromTemplate() {
-    const { ctx } = this;
+    const {
+      ctx,
+    } = this;
     const templateId = ctx.request.body.templateId;
 
     // 生成页面ID: timeStamp + 00 + 2位随机数
+    // 用来存储编辑模板
     const timeStranpStr = new Date().getTime();
     const randomStr = Math.random().toString().slice(-2);
+
     const pageId = `${timeStranpStr}00${randomStr}`;
 
     await makePagepipelineFromTemplate(this, templateId, pageId);
 
-    ctx.body = { pageId };
+    ctx.body = {
+      pageId,
+    };
   }
 
   async prepareFromPage() {
-    const { ctx, service } = this;
+    const {
+      ctx,
+      service,
+    } = this;
     const pageId = ctx.request.body.pageId;
 
     const page = await service.page.getPageById(pageId);
@@ -126,11 +176,17 @@ class EditController extends Controller {
 
     await makePagepipelineFromPage(this, templateId, pageId);
 
-    ctx.body = { pageId };
+    ctx.body = {
+      pageId,
+    };
   }
 
   async prepareForRelease() {
-    const { ctx, service, config } = this;
+    const {
+      ctx,
+      service,
+      config,
+    } = this;
     const pageId = ctx.request.body.pageId;
     const page = await service.page.getPageById(pageId);
     const templateId = page.templateId;
@@ -147,11 +203,16 @@ class EditController extends Controller {
       await makePageActivity(this, pageId);
     }
 
-    ctx.body = { pageId };
+    ctx.body = {
+      pageId,
+    };
   }
 
   async getBaseConfig() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
 
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
@@ -162,7 +223,10 @@ class EditController extends Controller {
   }
 
   async putBaseConfig() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.request.body.pageId;
     const baseConfig = ctx.request.body.baseConfig;
     const baseConfigStr = JSON.stringify(baseConfig, null, 2);
@@ -172,12 +236,16 @@ class EditController extends Controller {
     await ctx.helper.execShell([
       'pwd',
       `cd ./app/public/pipelines/${pageId}/server`,
-      'node node.js preview' ]);
+      'node node.js preview',
+    ]);
     ctx.body = '修改页面基本配置成功.';
   }
 
   async getBaseConfigSchema() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
     const schemaPath = path.join(templatepipelineDir, 'base-config-schema.json');
@@ -187,7 +255,10 @@ class EditController extends Controller {
   }
 
   async getTemplateComponents() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
     const dataPath = path.join(templatepipelineDir, 'components.json');
@@ -197,7 +268,10 @@ class EditController extends Controller {
   }
 
   async putTemplateComponents() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.request.body.pageId;
     const templateComponents = ctx.request.body.templateComponents;
     const templateComponentsStr = JSON.stringify(templateComponents, null, 2);
@@ -206,12 +280,16 @@ class EditController extends Controller {
     fs.writeFileSync(templateComonentsPath, templateComponentsStr, 'utf-8');
     await ctx.helper.execShell([
       `cd ./app/public/pipelines/${pageId}/server`,
-      'node node.js preview' ]);
+      'node node.js preview',
+    ]);
     ctx.body = '修改页面组件列表成功';
   }
 
   async getComponentsSchema() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
     const schemaPath = path.join(templatepipelineDir, 'components-schema.json');
@@ -221,7 +299,10 @@ class EditController extends Controller {
   }
 
   async getLibraryComponentsInfo() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
     const componentsInfoPath = path.join(templatepipelineDir, 'components-info.json');
@@ -232,7 +313,10 @@ class EditController extends Controller {
   }
 
   async getComponentsDefaultData() {
-    const { ctx, config } = this;
+    const {
+      ctx,
+      config,
+    } = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server/config');
     const componentsDefaultDataPath = path.join(templatepipelineDir, 'components-default-data.json');
