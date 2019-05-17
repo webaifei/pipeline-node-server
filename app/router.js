@@ -11,6 +11,9 @@ module.exports = app => {
   /** 获取模板id */
   router.get('/templateid', controller.templates.getTemplateId);
 
+
+  router.post('/pipeline/publish', controller.pipeline.publish);
+  router.post('/pipeline/pageList', controller.pipeline.pageList);
   // 模板生成页面相关接口
   router.post('/pipeline/prepareFromTemplate', controller.pipeline.prepareFromTemplate);
   router.post('/pipeline/prepareFromPage', controller.pipeline.prepareFromPage);

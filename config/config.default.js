@@ -73,6 +73,7 @@ module.exports = appInfo => {
 
   config.publicDir = path.join(__dirname, '..', 'app', 'public');
   config.temporaryDir = path.join(__dirname, '..', 'app', 'public', 'temp');
-
+  // 本地发布仓库目录
+  config.gitRepositoryDir = path.join(__dirname, '..', 'app', 'public/published');
   return config;
 };
