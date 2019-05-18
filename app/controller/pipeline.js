@@ -81,6 +81,7 @@ const makePagepipelineFromTemplate = async (context, templateId, pageId) => {
   await copyTemplateConfig(context, pageId);
   // 启动模板预览页面服务
   await ctx.helper.execShell([
+    `cp -rf ./app/public/pipelines/${pageId}/server ./app/public/pipelines/${pageId}/server-bak`,
     `cd ./app/public/pipelines/${pageId}/server`,
     'node node.js preview',
   ]);
@@ -136,46 +137,51 @@ const makePagepipelineFromPage = async (context, templateId, pageId) => {
 //         'rm -f vue-ssr-client-manifest.json',
 //     ]);
 // };
-const makePageActivity = async (context, pageId) => {
+const makePageActivity = async (context, pageId, timestamp) => {
   const {
     ctx,
     config,
   } = context;
-  const pagepipelineServerDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server');
+  const pagepipelineServerDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server-bak');
 
   const pageActivityDir = path.join(config.baseDir, 'app/public/activities', pageId);
-  const timestamp = Date.now();
+
   // 复制 pipelines 到 activities, 并执行页面发布的构建
   await ctx.helper.execShell([
     `mkdir -p ${pageActivityDir}`,
     `cp -rf ${pagepipelineServerDir} ${pageActivityDir}`,
+    `mv ${pageActivityDir}/server-bak ${pageActivityDir}/server`,
     `cd ./app/public/activities/${pageId}/server`,
     `node node.js release ${timestamp}`,
   ]);
 
   // 基于 dist 创建纯净的发布目录
   await ctx.helper.execShell([
-    `rm -rf ./app/public/activities/${pageId}/static/`,
-    `mkdir -p ./app/public/activities/${pageId}/static/${timestamp}`,
-    `cp -rf ./app/public/activities/${pageId}/server/dist/* ./app/public/activities/${pageId}/static/${timestamp}`,
-    `cd ./app/public/activities/${pageId}/static/${timestamp}`,
+    `rm -rf ./app/public/activities/${pageId}/${timestamp}/`,
+    `rm -rf ./app/public/activities/${pageId}/${timestamp}.zip`,
+    `mkdir -p ./app/public/activities/${pageId}/${timestamp}`,
+    `cp -rf ./app/public/activities/${pageId}/server/dist/* ./app/public/activities/${pageId}/${timestamp}`,
+    `cd ./app/public/activities/${pageId}/${timestamp}`,
     'rm -f index-origin.html',
     'rm -f vue-ssr-server-bundle.json',
     'rm -f vue-ssr-client-manifest.json',
     `cd ${pageActivityDir}`,
-    'zip -q -r static.zip static',
+    `zip -q -r ${timestamp}.zip ${timestamp}`,
   ]);
 };
 // 发布静态资源到CDN
-const publishCDN = async function publishCDN(context, pageId) {
+const publishCDN = async function publishCDN(context, pageId, timestamp) {
   const {ctx, config} = context;
-  const staticFile = path.join(config.baseDir, 'app/public/activities', pageId, 'static.zip');
+  const staticFile = path.join(config.baseDir, 'app/public/activities', pageId, `${timestamp}.zip`);
   const result = await ctx.curl('http://preapi.geinihua.com/upload', {
     method: 'POST',
     files: {
       project: staticFile
     }
   });
+  ctx.helper.execShell([
+    `rm ${staticFile}`
+  ])
   // error handler
 
 
@@ -190,6 +196,7 @@ const pushToRegistry = async function pushToRegistry(context, pageId) {
     `mkdir -p sparrow-activity-published/${pageId}`,
     `cp ${pageActivityHtml} sparrow-activity-published/${pageId}`,
     `cd sparrow-activity-published`,
+    `git pull`,
     `git add .`,
     `git commit -m 'add ${pageId}' || true`,
     `git push -f`
@@ -204,11 +211,11 @@ class EditController extends Controller {
   async publish() {
     const {ctx} = this;
     const {pageId} = ctx.request.body;
+    const timestamp = Date.now();
     // 执行构建
-    await makePageActivity(this, pageId);
+    await makePageActivity(this, pageId, timestamp);
     // 发布静态资源到CDN
-
-    await publishCDN(this, pageId);
+    await publishCDN(this, pageId, timestamp);
     // push到git仓库
     try {
       await pushToRegistry(this, pageId);
