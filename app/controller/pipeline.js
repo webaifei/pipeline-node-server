@@ -142,23 +142,24 @@ const makePageActivity = async (context, pageId, timestamp) => {
     ctx,
     config,
   } = context;
-  const pagepipelineServerDir = path.join(config.baseDir, 'app/public/pipelines', pageId, 'server-bak');
+  const pagepipelineServerDir = path.join(config.baseDir, 'app/public/pipelines', pageId);
 
   const pageActivityDir = path.join(config.baseDir, 'app/public/activities', pageId);
 
   // 复制 pipelines 到 activities, 并执行页面发布的构建
   await ctx.helper.execShell([
-    `mkdir -p ${pageActivityDir}`,
-    `cp -rf ${pagepipelineServerDir} ${pageActivityDir}`,
-    `mv ${pageActivityDir}/server-bak ${pageActivityDir}/server`,
+    `mkdir -p ${pageActivityDir}`, 
+    `cp -rf ${pagepipelineServerDir}/server ${pageActivityDir}`,
+    `cp ${pagepipelineServerDir}/server-bak/dist/index-origin.html ${pageActivityDir}/server/dist/`,
     `cd ./app/public/activities/${pageId}/server`,
     `node node.js release ${timestamp}`,
   ]);
 
   // 基于 dist 创建纯净的发布目录
   await ctx.helper.execShell([
-    `rm -rf ./app/public/activities/${pageId}/${timestamp}/`,
-    `rm -rf ./app/public/activities/${pageId}/${timestamp}.zip`,
+    `cd ${path.join(config.baseDir)}`,
+    // `rm -rf ./app/public/activities/${pageId}/${timestamp}/`,
+    // `rm -rf ./app/public/activities/${pageId}/${timestamp}.zip`,
     `mkdir -p ./app/public/activities/${pageId}/${timestamp}`,
     `cp -rf ./app/public/activities/${pageId}/server/dist/* ./app/public/activities/${pageId}/${timestamp}`,
     `cd ./app/public/activities/${pageId}/${timestamp}`,
@@ -173,6 +174,7 @@ const makePageActivity = async (context, pageId, timestamp) => {
 const publishCDN = async function publishCDN(context, pageId, timestamp) {
   const {ctx, config} = context;
   const staticFile = path.join(config.baseDir, 'app/public/activities', pageId, `${timestamp}.zip`);
+  // const timestampFile = path.join(config.baseDir, 'app/public/activities', pageId, timestamp);
   const result = await ctx.curl('http://preapi.geinihua.com/upload', {
     method: 'POST',
     files: {
@@ -180,7 +182,7 @@ const publishCDN = async function publishCDN(context, pageId, timestamp) {
     }
   });
   ctx.helper.execShell([
-    `rm ${staticFile}`
+    `rm ${staticFile}`,
   ])
   // error handler
 
@@ -190,6 +192,7 @@ const publishCDN = async function publishCDN(context, pageId, timestamp) {
 const pushToRegistry = async function pushToRegistry(context, pageId) {
   const {ctx, config} = context;
   const gitRepositoryDir = config.gitRepositoryDir;
+  const pageActivityDir = path.join(config.baseDir, 'app/public/activities', pageId);
   const pageActivityHtml = path.join(config.baseDir, 'app/public/activities', pageId, 'server/dist/index.html');
   await ctx.helper.execShell([
     `cd ${gitRepositoryDir}`,
@@ -199,7 +202,8 @@ const pushToRegistry = async function pushToRegistry(context, pageId) {
     `git pull`,
     `git add .`,
     `git commit -m 'add ${pageId}' || true`,
-    `git push -f`
+    `git push -f`,
+    `rm -rf ${pageActivityDir}`
   ]);
 }
 
