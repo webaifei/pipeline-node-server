@@ -1,12 +1,10 @@
 /*
- * 基本 mongodb 操作函数
- * @Author: CntChen
- * @Date: 2018-11-02
+ * 活动页mongodb功能封装
  */
 
 'use strict';
 
-const DBLOG_PREFIX = '[db-service]:';
+const DBLOG_PREFIX = '[activity-service]:';
 
 const existCheck = (object, keysWithErrorInfo, prefix = '') => {
   const keys = Object.keys(keysWithErrorInfo);
@@ -25,64 +23,64 @@ const existCheck = (object, keysWithErrorInfo, prefix = '') => {
 };
 
 module.exports = app => {
-  class db extends app.Service {
+  class activity extends app.Service {
     // CRUD for Template
-    async queryManyTemplates({ conditions = {} } = {}) {
-      const query = await app.model.Template.find(conditions)
+    async findAll({ conditions = {} } = {}) {
+      const query = await app.model.Activity.find(conditions)
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
           throw err;
         });
       return query;
     }
-    async queryTemplate({ conditions = {} } = {}) {
+    async findOne({ conditions = {} } = {}) {
       const checkResult = existCheck(conditions, {
         id: 'should not be undefined.',
-      }, 'queryTemplate');
+      }, 'findOne');
       if (checkResult instanceof Error) {
         throw new Error(`${DBLOG_PREFIX} ${checkResult.toString()}`);
       }
 
-      const query = await app.model.Template.findOne(conditions)
+      const query = await app.model.Activity.findOne(conditions)
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
           throw err;
         });
       return query;
     }
-    async createTemplate({ payload = {} }) {
-      const newTemplate = new app.model.Template(payload);
-      const query = await newTemplate.save()
+    async create({ payload = {} }) {
+      const newActivity = new app.model.Activity(payload);
+      const query = await newActivity.save()
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
           throw err;
         });
       return query;
     }
-    async updateTemplate({ conditions = {}, payload = {} }) {
+    async udpate({ conditions = {}, payload = {} }) {
       const checkResult = existCheck(conditions, {
         id: 'should not be undefined.',
-      }, 'updateTemplate');
+      }, 'udpate');
       if (checkResult instanceof Error) {
         throw new Error(`${DBLOG_PREFIX} ${checkResult.toString()}`);
       }
 
-      const query = await app.model.Template.updateOne(conditions, payload)
+      const query = await app.model.Activity.updateOne(conditions, payload)
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
           throw err;
         });
       return query;
     }
-    async deleteTemplate({ conditions = {} }) {
+    async deleteOne({ conditions = {} }) {
       const checkResult = existCheck(conditions, {
         id: 'should not be undefined.',
-      }, 'deleteTemplate');
+      }, 'deleteOne');
       if (checkResult instanceof Error) {
         throw new Error(`${DBLOG_PREFIX} ${checkResult.toString()}`);
       }
 
-      const query = await app.model.Template.deleteOne(conditions)
+      const query = await app.model.Activity.deleteOne(conditions)
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
           throw err;
@@ -90,6 +88,5 @@ module.exports = app => {
       return query;
     }
   }
-
-  return db;
+  return activity;
 };

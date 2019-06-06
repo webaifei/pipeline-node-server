@@ -9,7 +9,7 @@ module.exports = app => {
         conditions: ctx.request.query,
       };
 
-      const result = await service.db.queryManyTemplates(dbParams);
+      const result = await service.template.queryManyTemplates(dbParams);
       ctx.body = result;
     }
 
@@ -22,7 +22,7 @@ module.exports = app => {
         },
       };
 
-      const result = await service.db.queryTemplate(dbParams);
+      const result = await service.template.queryTemplate(dbParams);
       ctx.body = result;
     }
 
@@ -36,7 +36,7 @@ module.exports = app => {
           id,
         },
       };
-      const templates = await service.db.queryManyTemplates(querydbParams);
+      const templates = await service.template.queryManyTemplates(querydbParams);
       if (templates.length > 0) {
         throw new Error('Template exist.');
       }
@@ -62,7 +62,7 @@ module.exports = app => {
         },
       };
 
-      const result = await service.db.createTemplate(dbParams);
+      const result = await service.template.createTemplate(dbParams);
       ctx.body = result;
     }
 
@@ -101,20 +101,19 @@ module.exports = app => {
         await ctx.helper.execShell(`mv ${config.temporaryDir}/${id}/* ${config.resourcesPath.templateDir}/${id}`);
       }
 
-      const result = await service.db.updateTemplate(dbParams);
+      const result = await service.template.updateTemplate(dbParams);
       ctx.body = result;
     }
 
     async destroy() {
       const { ctx, service } = this;
-
       const dbParams = {
         conditions: {
           id: ctx.params.id,
         },
       };
 
-      const result = await service.db.deleteTemplate(dbParams);
+      const result = await service.template.deleteTemplate(dbParams);
       ctx.body = result;
     }
 

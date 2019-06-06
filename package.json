@@ -27,6 +27,7 @@
     "egg-mock": "^3.14.0",
     "eslint": "^4.11.0",
     "eslint-config-egg": "^6.0.0",
+    "eslint-plugin-html": "^5.0.5",
     "jsdoc": "^3.5.5",
     "replace": "^1.1.0",
     "standard-version": "^4.4.0",
@@ -45,7 +46,7 @@
     "test-local": "egg-bin test",
     "doc": "node_modules/apidoc/bin/apidoc -i app/controller -o app/public/docs",
     "cov": "egg-bin cov",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "ci": "npm run lint && npm run cov",
     "autod": "autod",
     "release": "standard-version"
