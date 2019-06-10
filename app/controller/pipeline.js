@@ -264,11 +264,6 @@ class EditController extends Controller {
 
     // 发布静态资源到CDN
     await publishCDN(this, pageId, timestamp);
-    // ctx.body = {
-    //   code: 1
-    // };
-    // return;
-    // push到git仓库
     const baseConfigStr = fs.readFileSync(
       path.join(
         config.baseDir,
@@ -281,8 +276,18 @@ class EditController extends Controller {
     // html页面名称 统计相关
     // TODO: 后面替换策略
     const pageName = baseConfig.basename;
+    const payload = {
+      status: 1,
+    };
     try {
       await pushToRegistry(this, pageId, timestamp, pageName);
+      
+      await ctx.service.activity.update({
+        conditions: {
+          id: pageId,
+        },
+        payload,
+      });
     } catch (e) {
       console.log(e, e === "Everything up-to-date");
       if (e === "Everything up-to-date") {

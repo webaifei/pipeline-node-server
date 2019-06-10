@@ -30,6 +30,7 @@ module.exports = app => {
       const { ctx, service, config } = this;
 
       const id = Number(ctx.request.body.id);
+      
 
       const querydbParams = {
         conditions: {
@@ -43,10 +44,9 @@ module.exports = app => {
 
       const name = ctx.request.body.name;
       const fileName = ctx.request.body.fileName;
-      const imageName = ctx.request.body.imageName;
+      const thumbnail = ctx.request.body.imageName;
 
       const files = `${id}/${fileName}`;
-      const thumbnail = `${id}/${imageName}`;
 
       // 移动文件到资源目录
       await ctx.helper.execShell(`mkdir -p ${config.resourcesPath.templateDir}/${id}`);
