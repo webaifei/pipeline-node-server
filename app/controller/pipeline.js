@@ -100,7 +100,7 @@ const makePagepipelineFromTemplate = async (context, templateId, pageId) => {
   await ctx.helper.execShell([
     `cp -rf ./app/public/pipelines/${pageId}/server ./app/public/pipelines/${pageId}/server-bak`,
     `cd ./app/public/pipelines/${pageId}/server`,
-    'node node.js preview',
+    "node node.js preview"
   ]);
 };
 
@@ -277,17 +277,10 @@ class EditController extends Controller {
     // TODO: 后面替换策略
     const pageName = baseConfig.basename;
     const payload = {
-      status: 1,
+      status: 1
     };
     try {
       await pushToRegistry(this, pageId, timestamp, pageName);
-      
-      await ctx.service.activity.update({
-        conditions: {
-          id: pageId,
-        },
-        payload,
-      });
     } catch (e) {
       console.log(e, e === "Everything up-to-date");
       if (e === "Everything up-to-date") {
@@ -303,6 +296,12 @@ class EditController extends Controller {
         };
       }
     }
+    await ctx.service.activity.update({
+      conditions: {
+        id: pageId
+      },
+      payload
+    });
   }
 
   /**
@@ -318,14 +317,14 @@ class EditController extends Controller {
     //   .filter(item => !!item)
     //   .map((item, index) => {
     //     return {
-    //       id: index,
+    //       id: item,
     //       pageId: item
     //     };
     //   })
     //   .reverse();
 
     ctx.body = {
-      list,
+      list
     };
   }
 

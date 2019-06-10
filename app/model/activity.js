@@ -12,7 +12,7 @@ module.exports = app => {
 
   const ActivitySchema = new Schema({
     id: {
-      type: Number,
+      type: String,
       unique: true,
       required: true,
     },

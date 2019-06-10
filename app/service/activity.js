@@ -64,7 +64,7 @@ module.exports = app => {
       if (checkResult instanceof Error) {
         throw new Error(`${DBLOG_PREFIX} ${checkResult.toString()}`);
       }
-
+      console.log(payload, "payload");
       const query = await app.model.Activity.updateOne(conditions, payload)
         .catch(err => {
           app.logger.error(DBLOG_PREFIX, err);
