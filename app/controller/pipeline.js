@@ -15,7 +15,7 @@ const Controller = require("egg").Controller;
 // templateId 模板id
 // pageId 当前预览页目录名
 const makePagePipelineTemplate = async (context, templateId, pageId) => {
-  const { ctx, config, service } = context;
+  const {ctx, config, service} = context;
   // 通过templateId获取模板的数据
   const template = await service.template.queryTemplate({
     conditions: {
@@ -25,17 +25,17 @@ const makePagePipelineTemplate = async (context, templateId, pageId) => {
   // const template = {
   //   files: '/pipeline-resource/template/1/pipeline-template.zip',
   // };
-  console.log("test", template, template.files, template.files);
+  console.log('test', template, template.files, template.files);
   // 模板压缩文件路径
   const templateZipFilePath = path.join(
-    config.resourcesPath.templateDir,
-    template.files
+      config.resourcesPath.templateDir,
+      template.files
   );
   // 预览文件夹路径
   const pagepipelineDir = path.join(
-    config.baseDir,
-    "app/public/pipelines",
-    pageId
+      config.baseDir,
+      'app/public/pipelines',
+      pageId
   );
   const templatepipelineDir = pagepipelineDir;
   // 解压
@@ -47,30 +47,30 @@ const makePagePipelineTemplate = async (context, templateId, pageId) => {
 
 // 在页面工作管道备份模板(页面)配置数据
 const copyTemplateConfig = async (context, pageId) => {
-  const { ctx, config } = context;
+  const {ctx, config} = context;
   // 预览页路径
   const pagepipelineDir = path.join(
-    config.baseDir,
-    "app/public/pipelines",
-    pageId
+      config.baseDir,
+      "app/public/pipelines",
+      pageId
   );
   // 配置目录
   const templatepipelineDir = path.join(pagepipelineDir, "server/config");
   const baseConfigpipelinePath = path.join(
-    templatepipelineDir,
-    "base-config.json"
+      templatepipelineDir,
+      "base-config.json"
   );
   const originBaseConfigpipelinePath = path.join(
-    templatepipelineDir,
-    "base-config-origin.json"
+      templatepipelineDir,
+      "base-config-origin.json"
   );
   const templatepipelinePath = path.join(
-    templatepipelineDir,
-    "components.json"
+      templatepipelineDir,
+      "components.json"
   );
   const originTemplatepipelinePath = path.join(
-    templatepipelineDir,
-    "components-origin.json"
+      templatepipelineDir,
+      "components-origin.json"
   );
 
   // 复制模板配置文件, 做为页面重置的数据来源
@@ -88,14 +88,14 @@ const copyTemplateConfig = async (context, pageId) => {
  */
 
 const makePagepipelineFromTemplate = async (context, templateId, pageId) => {
-  const { ctx } = context;
-  const { name } = ctx.request.body;
-  const payload = { id: pageId, templateId, name };
+  const {ctx} = context;
+  const {name} = ctx.request.body;
+  const payload = {id: pageId, templateId, name};
   await makePagePipelineTemplate(context, templateId, pageId);
   // 备份pageId页面的配置
   await copyTemplateConfig(context, pageId);
   // 插入数据库
-  await ctx.service.activity.create({ payload });
+  await ctx.service.activity.create({payload});
   // 启动模板预览页面服务
   await ctx.helper.execShell([
     `cp -rf ./app/public/pipelines/${pageId}/server ./app/public/pipelines/${pageId}/server-bak`,
@@ -106,15 +106,15 @@ const makePagepipelineFromTemplate = async (context, templateId, pageId) => {
 
 // 基于页面构建页面工作管道
 const makePagepipelineFromPage = async (context, templateId, pageId) => {
-  const { ctx, config, service } = context;
+  const {ctx, config, service} = context;
 
   const page = await service.page.getPageById(pageId);
 
   const pageZipFilePath = path.join(config.resourcesPath.pageDir, page.files);
   const pagepipelineDir = path.join(
-    config.baseDir,
-    "app/public/pipelines",
-    pageId
+      config.baseDir,
+      "app/public/pipelines",
+      pageId
   );
   const templatepipelineDir = path.join(pagepipelineDir, "server/config");
 
@@ -157,17 +157,17 @@ const makePagepipelineFromPage = async (context, templateId, pageId) => {
 //     ]);
 // };
 const makePageActivity = async (context, pageId, timestamp) => {
-  const { ctx, config } = context;
+  const {ctx, config} = context;
   const pagepipelineServerDir = path.join(
-    config.baseDir,
-    "app/public/pipelines",
-    pageId
+      config.baseDir,
+      "app/public/pipelines",
+      pageId
   );
 
   const pageActivityDir = path.join(
-    config.baseDir,
-    "app/public/activities",
-    pageId
+      config.baseDir,
+      "app/public/activities",
+      pageId
   );
 
   // 复制 pipelines 到 activities, 并执行页面发布的构建
@@ -195,12 +195,12 @@ const makePageActivity = async (context, pageId, timestamp) => {
 };
 // 发布静态资源到CDN
 const publishCDN = async function publishCDN(context, pageId, timestamp) {
-  const { ctx, config } = context;
+  const {ctx, config} = context;
   const staticFile = path.join(
-    config.baseDir,
-    "app/public/activities",
-    pageId,
-    `${timestamp}.zip`
+      config.baseDir,
+      "app/public/activities",
+      pageId,
+      `${timestamp}.zip`
   );
   // const timestampFile = path.join(config.baseDir, 'app/public/activities', pageId, timestamp);
   const result = await ctx.curl("http://preapi.geinihua.com/upload", {
@@ -214,24 +214,24 @@ const publishCDN = async function publishCDN(context, pageId, timestamp) {
 };
 // 将构建之后的html入口页面push到远程仓库 触发 webhooks 发布到nginx服务器上
 const pushToRegistry = async function pushToRegistry(
-  context,
-  pageId,
-  timestamp,
-  pageName
+    context,
+    pageId,
+    timestamp,
+    pageName
 ) {
-  const { ctx, config } = context;
+  const {ctx, config} = context;
   const gitRepositoryDir = config.gitRepositoryDir;
   const pageActivityDir = path.join(
-    config.baseDir,
-    "app/public/activities",
-    pageId
+      config.baseDir,
+      "app/public/activities",
+      pageId
   );
   const pageActivityHtml = path.join(
-    config.baseDir,
-    "app/public/activities",
-    pageId,
-    timestamp + "",
-    "index.html"
+      config.baseDir,
+      "app/public/activities",
+      pageId,
+      timestamp + "",
+      "index.html"
   );
 
   console.log(pageName, "pageName");
@@ -251,12 +251,36 @@ const pushToRegistry = async function pushToRegistry(
 
 class EditController extends Controller {
   /**
+   * 删除模板
+   * @tip  暂时不删除page文件
+   */
+  async remove() {
+    const { ctx } = this;
+    const { pageId } = ctx.request.body;
+    console.log("pageID", pageId);
+    if (pageId == undefined) {
+      ctx.body = {
+        ret: 1,
+        message: 'pageId 不能为空',
+      };
+    } else {
+      await ctx.service.activity.deleteOne({
+        conditions: {
+          id: pageId,
+        },
+      });
+      ctx.body = {
+        pageId,
+      };
+    }
+  }
+
+  /**
    * 发布页面
-   * @return {Promise<void>}
    */
   async publish() {
-    const { ctx, config } = this;
-    const { pageId } = ctx.request.body;
+    const {ctx, config} = this;
+    const {pageId} = ctx.request.body;
     const timestamp = Date.now();
 
     // 执行构建
@@ -265,23 +289,30 @@ class EditController extends Controller {
     // 发布静态资源到CDN
     await publishCDN(this, pageId, timestamp);
     const baseConfigStr = fs.readFileSync(
-      path.join(
-        config.baseDir,
-        "app/public/activities",
-        pageId,
-        "server-bak/config/base-config.json"
-      )
+        path.join(
+            config.baseDir,
+            "app/public/activities",
+            pageId,
+            "server-bak/config/base-config.json"
+        )
     );
     const baseConfig = JSON.parse(baseConfigStr);
     // html页面名称 统计相关
     // TODO: 后面替换策略
     const pageName = baseConfig.basename;
     const payload = {
-      status: 1
+      status: 1,
     };
     try {
+      await ctx.service.activity.update({
+        conditions: {
+          id: pageId
+        },
+        payload
+      });
       await pushToRegistry(this, pageId, timestamp, pageName);
     } catch (e) {
+      
       console.log(e, e === "Everything up-to-date");
       if (e === "Everything up-to-date") {
         ctx.body = {
@@ -292,39 +323,21 @@ class EditController extends Controller {
         // error
         ctx.body = {
           pageId: `https://h5.geinihua.com/published/${pageId}/${pageName}.html`,
-          msg: e
+          msg: e,
         };
       }
     }
-    await ctx.service.activity.update({
-      conditions: {
-        id: pageId
-      },
-      payload
-    });
+
   }
 
   /**
    * 获取历史page list
-   * @return {Promise<void>}
    */
   async pageList() {
-    const { ctx } = this;
+    const {ctx} = this;
     const list = await ctx.service.activity.findAll();
-    // const listStr = await ctx.helper.execShell(["ls ./app/public/pipelines/"]);
-    // const list = listStr
-    //   .split("\n")
-    //   .filter(item => !!item)
-    //   .map((item, index) => {
-    //     return {
-    //       id: item,
-    //       pageId: item
-    //     };
-    //   })
-    //   .reverse();
-
     ctx.body = {
-      list
+      list,
     };
   }
 
@@ -335,15 +348,15 @@ class EditController extends Controller {
    * 3. 启动预览页服务
    */
   async prepareFromTemplate() {
-    const { ctx } = this;
+    const {ctx} = this;
     const templateId = ctx.request.body.templateId;
 
     // 生成页面ID: timeStamp + 00 + 2位随机数
     // 用来存储编辑模板
     const timeStranpStr = new Date().getTime();
     const randomStr = Math.random()
-      .toString()
-      .slice(-2);
+    .toString()
+    .slice(-2);
 
     const pageId = `${timeStranpStr}00${randomStr}`;
 
@@ -355,7 +368,7 @@ class EditController extends Controller {
   }
 
   async prepareFromPage() {
-    const { ctx } = this;
+    const {ctx} = this;
     const pageId = ctx.request.body.pageId;
     await ctx.helper.execShell([
       `cd ./app/public/pipelines/${pageId}/server`,
@@ -367,7 +380,7 @@ class EditController extends Controller {
   }
 
   async prepareFromPageA() {
-    const { ctx, service } = this;
+    const {ctx, service} = this;
     const pageId = ctx.request.body.pageId;
 
     const page = await service.page.getPageById(pageId);
@@ -381,31 +394,31 @@ class EditController extends Controller {
   }
 
   async prepareForRelease() {
-    const { ctx, service, config } = this;
+    const {ctx, service, config} = this;
     const pageId = ctx.request.body.pageId;
     const page = await service.page.getPageById(pageId);
     const templateId = page.templateId;
 
     const pageActivityDir = path.join(
-      config.baseDir,
-      "app/public/activities",
-      pageId
+        config.baseDir,
+        "app/public/activities",
+        pageId
     );
     const pagepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId
+        config.baseDir,
+        "app/public/pipelines",
+        pageId
     );
 
     const pagepipelineDirStat = await ctx.helper.file
-      .fsStat(pagepipelineDir)
-      .catch(e => e);
+    .fsStat(pagepipelineDir)
+    .catch(e => e);
     if (pagepipelineDirStat instanceof Error) {
       await makePagepipelineFromTemplate(this, templateId, pageId);
     }
     const pageActivityDirStat = await ctx.helper.file
-      .fsStat(pageActivityDir)
-      .catch(e => e);
+    .fsStat(pageActivityDir)
+    .catch(e => e);
     if (pageActivityDirStat instanceof Error) {
       await makePageActivity(this, pageId);
     }
@@ -416,14 +429,14 @@ class EditController extends Controller {
   }
 
   async getBaseConfig() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
 
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const dataPath = path.join(templatepipelineDir, "base-config.json");
     const dataStr = fs.readFileSync(dataPath, "utf-8");
@@ -432,15 +445,15 @@ class EditController extends Controller {
   }
 
   async putBaseConfig() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.request.body.pageId;
     const baseConfig = ctx.request.body.baseConfig;
     const baseConfigStr = JSON.stringify(baseConfig, null, 2);
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const baseConfigPath = path.join(templatepipelineDir, "base-config.json");
     fs.writeFileSync(baseConfigPath, baseConfigStr, "utf-8");
@@ -453,17 +466,17 @@ class EditController extends Controller {
   }
 
   async getBaseConfigSchema() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const schemaPath = path.join(
-      templatepipelineDir,
-      "base-config-schema.json"
+        templatepipelineDir,
+        "base-config-schema.json"
     );
     const schemaStr = fs.readFileSync(schemaPath, "utf-8");
     const content = JSON.parse(schemaStr);
@@ -471,13 +484,13 @@ class EditController extends Controller {
   }
 
   async getTemplateComponents() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const dataPath = path.join(templatepipelineDir, "components.json");
     const dataStr = fs.readFileSync(dataPath, "utf-8");
@@ -486,19 +499,19 @@ class EditController extends Controller {
   }
 
   async putTemplateComponents() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.request.body.pageId;
     const templateComponents = ctx.request.body.templateComponents;
     const templateComponentsStr = JSON.stringify(templateComponents, null, 2);
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const templateComonentsPath = path.join(
-      templatepipelineDir,
-      "components.json"
+        templatepipelineDir,
+        "components.json"
     );
     fs.writeFileSync(templateComonentsPath, templateComponentsStr, "utf-8");
     await ctx.helper.execShell([
@@ -509,13 +522,13 @@ class EditController extends Controller {
   }
 
   async getComponentsSchema() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const schemaPath = path.join(templatepipelineDir, "components-schema.json");
     const schemaStr = fs.readFileSync(schemaPath, "utf-8");
@@ -524,17 +537,17 @@ class EditController extends Controller {
   }
 
   async getLibraryComponentsInfo() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const componentsInfoPath = path.join(
-      templatepipelineDir,
-      "components-info.json"
+        templatepipelineDir,
+        "components-info.json"
     );
     const componentsInfoStr = fs.readFileSync(componentsInfoPath, "utf-8");
     const content = JSON.parse(componentsInfoStr);
@@ -543,21 +556,21 @@ class EditController extends Controller {
   }
 
   async getComponentsDefaultData() {
-    const { ctx, config } = this;
+    const {ctx, config} = this;
     const pageId = ctx.query.pageId;
     const templatepipelineDir = path.join(
-      config.baseDir,
-      "app/public/pipelines",
-      pageId,
-      "server/config"
+        config.baseDir,
+        "app/public/pipelines",
+        pageId,
+        "server/config"
     );
     const componentsDefaultDataPath = path.join(
-      templatepipelineDir,
-      "components-default-data.json"
+        templatepipelineDir,
+        "components-default-data.json"
     );
     const componentsDefaultDataStr = fs.readFileSync(
-      componentsDefaultDataPath,
-      "utf-8"
+        componentsDefaultDataPath,
+        "utf-8"
     );
     const content = JSON.parse(componentsDefaultDataStr);
     console.log(componentsDefaultDataStr);
